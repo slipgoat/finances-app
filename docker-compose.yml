@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}" ]
+      timeout: 20s
+      interval: 2s
+      retries: 10
+  api:
+    build: .
+    volumes:
+      - ./tmp/log:/app/log
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    labels: # new
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`finance-app.localhost`)"
+  traefik:
+    image: traefik:v2.2
+    ports:
+      - "8000:80"
+      - "8080:8080"
+    volumes:
+      - "./traefik.dev.toml:/etc/traefik/traefik.toml"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+volumes:
+  postgres_data:
