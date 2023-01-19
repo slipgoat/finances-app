@@ -14,7 +14,7 @@ services:
       interval: 2s
       retries: 10
   api:
-    build: .
+    image: registry.digitalocean.com/docker-slpgt/finance-app-api:latest
     command: bash -c 'uvicorn main:app --host 0.0.0.0 --port 80 --log-config logging.yaml'
     expose:
       - 80
@@ -25,7 +25,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    labels: # new
+    labels:
       - "traefik.enable=true"
       - "traefik.http.routers.fastapi.rule=Host(`${MAIN_HOST}`)"
       - "traefik.http.routers.fastapi.tls=true"
@@ -40,6 +40,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik-public-certificates:/certificates"
+      - "./traefik.prod.toml:/etc/traefik/traefik.toml"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOST}`) && (PathPrefix(`/`)"
