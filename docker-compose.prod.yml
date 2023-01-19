@@ -3,7 +3,7 @@ services:
   db:
     image: postgres:15
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./postgres_data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
     env_file:
@@ -15,6 +15,9 @@ services:
       retries: 10
   api:
     build: .
+    command: bash -c 'uvicorn main:app --host 0.0.0.0 --port 80 --log-config logging.yaml'
+    expose:
+      - 80
     volumes:
       - ./tmp/log:/app/log
     env_file:
@@ -30,7 +33,7 @@ services:
   traefik:
     image: traefik:v2.2
     ports:
-      - "8000:80"
+      - "80:80"
       - "443:443"
     environment:
       - "TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL=${CERT_EMAIL}"
@@ -45,6 +48,3 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=${DASHBOARD_USER}:${DASHBOARD_PASSWORD}"
-
-volumes:
-  postgres_data:
