@@ -15,7 +15,7 @@ services:
       retries: 10
   api:
     image: registry.digitalocean.com/docker-slpgt/finance-app-api:latest
-    command: bash -c 'uvicorn main:app --host 0.0.0.0 --port 80 --log-config logging.yaml'
+    command: sh -c 'uvicorn main:app --host 0.0.0.0 --port 80 --log-config logging.yaml'
     expose:
       - 80
     volumes:
