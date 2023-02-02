@@ -22,13 +22,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    labels: # new
+    labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fastapi.rule=Host(`finance-app.localhost`)"
+      - "traefik.http.routers.fastapi.rule=Host(`finance-app.localhost`)  && PathPrefix(`/api`)"
+  web:
+    image: finance-app-web:dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`finance-app.localhost`)"
   traefik:
     image: traefik:v2.2
     ports:
-      - "8000:80"
+      - "80:80"
       - "8080:8080"
     volumes:
       - "./traefik.dev.toml:/etc/traefik/traefik.toml"

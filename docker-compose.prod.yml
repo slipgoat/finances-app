@@ -27,9 +27,16 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fastapi.rule=Host(`${MAIN_HOST}`)"
+      - "traefik.http.routers.fastapi.rule=Host(`${MAIN_HOST}`)  && PathPrefix(`/api`)"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+  web:
+    image: registry.digitalocean.com/docker-slpgt/finance-app-web:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${MAIN_HOST}`)"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
   traefik:
     image: traefik:v2.2
     ports:
