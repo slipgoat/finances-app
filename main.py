@@ -22,6 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+v1 = FastAPI()
 
 
 def get_db():
@@ -34,7 +35,7 @@ def get_db():
         db.close()
 
 
-@app.get("/state")
+@v1.get("/state")
 async def root(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     user_id = verify_token(db, token)
     incomes = database_crud.get_incomes(db, user_id)
@@ -52,27 +53,27 @@ async def root(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db
     }
 
 
-@app.post("/signup", response_model=Token)
+@v1.post("/signup", response_model=Token)
 async def signup(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)) -> Token:
     return service.signup(db, data)
 
 
-@app.post("/signin", response_model=Token)
+@v1.post("/signin", response_model=Token)
 async def signin(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)) -> Token:
     return service.signin(db, data)
 
 
-@app.get("/users", response_model=list[User])
+@v1.get("/users", response_model=list[User])
 async def get_users(db: Session = Depends(get_db)):
     return database_crud.get_users(db)
 
 
-@app.get("/settings", response_model=Settings)
+@v1.get("/settings", response_model=Settings)
 async def get_user_settings(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_user_settings(db, token)
 
 
-@app.patch("/settings", response_model=Settings)
+@v1.patch("/settings", response_model=Settings)
 async def update_user_settings(
         settings_update: SettingsUpdate,
         token: str = Depends(oauth2_scheme),
@@ -81,27 +82,27 @@ async def update_user_settings(
     return service.update_user_settings(db, settings_update, token)
 
 
-@app.get("/incomes", response_model=list[Category])
+@v1.get("/incomes", response_model=list[Category])
 async def get_incomes(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_incomes(db, token)
 
 
-@app.get("/accounts", response_model=list[Category])
+@v1.get("/accounts", response_model=list[Category])
 async def get_accounts(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_accounts(db, token)
 
 
-@app.get("/expenses", response_model=list[Category])
+@v1.get("/expenses", response_model=list[Category])
 async def get_expenses(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_expenses(db, token)
 
 
-@app.get("/categories/{category_id}", response_model=Category)
+@v1.get("/categories/{category_id}", response_model=Category)
 async def get_category(category_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_category(db, category_id, token)
 
 
-@app.post("/categories", response_model=Category)
+@v1.post("/categories", response_model=Category)
 async def add_category(
         category_create: CategoryCreate,
         token: str = Depends(oauth2_scheme),
@@ -110,7 +111,7 @@ async def add_category(
     return service.add_category(db, category_create, token)
 
 
-@app.patch("/categories/{category_id}", response_model=Category)
+@v1.patch("/categories/{category_id}", response_model=Category)
 async def update_category(
         category_update: CategoryUpdate,
         category_id: int,
@@ -119,12 +120,12 @@ async def update_category(
     return service.update_category(db, category_update, category_id, token)
 
 
-@app.delete("/categories/{category_id}", status_code=204)
+@v1.delete("/categories/{category_id}", status_code=204)
 async def delete_category(category_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.delete_category(db, category_id, token)
 
 
-@app.post("/income-account-transactions", response_model=Transaction)
+@v1.post("/income-account-transactions", response_model=Transaction)
 async def add_income_account_transaction(
         transaction_create: TransactionCreate,
         token: str = Depends(oauth2_scheme),
@@ -133,7 +134,7 @@ async def add_income_account_transaction(
     return service.add_income_account_transaction(db, transaction_create, token)
 
 
-@app.post("/account-expense-transactions", response_model=Transaction)
+@v1.post("/account-expense-transactions", response_model=Transaction)
 async def add_account_expense_transaction(
         transaction_create: TransactionCreate,
         token: str = Depends(oauth2_scheme),
@@ -142,12 +143,12 @@ async def add_account_expense_transaction(
     return service.add_account_expense_transaction(db, transaction_create, token)
 
 
-@app.get("/categories/{category_id}/transactions", response_model=list[Transaction])
+@v1.get("/categories/{category_id}/transactions", response_model=list[Transaction])
 async def get_category_transactions(category_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.get_category_transactions(db, category_id, token)
 
 
-@app.patch("/transactions/{transaction_id}", response_model=Transaction)
+@v1.patch("/transactions/{transaction_id}", response_model=Transaction)
 async def update_transaction(
         transaction_update: TransactionUpdate,
         transaction_id: int,
@@ -157,6 +158,9 @@ async def update_transaction(
     return service.update_transaction(db, transaction_update, transaction_id, token)
 
 
-@app.delete("/transactions/{transaction_id}", status_code=204)
+@v1.delete("/transactions/{transaction_id}", status_code=204)
 async def delete_transaction(transaction_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     return service.delete_transaction(db, transaction_id, token)
+
+
+app.mount("/api/v1", v1)
