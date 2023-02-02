@@ -28,13 +28,13 @@ def signin(db: Session, data: OAuth2PasswordRequestForm) -> Token:
     return Token(access_token=token)
 
 
-def get_user_settings(db: Session, user_id: int) -> SettingsDb:
-    validation.validate_entity_exists(user_id, "user", database_crud.get_user(db, user_id))
+def get_user_settings(db: Session, token: str) -> SettingsDb:
+    user_id = auth.verify_token(db, token)
     return database_crud.get_user_settings(db, user_id)
 
 
-def update_user_settings(db: Session, settings_update: SettingsUpdate, user_id: int) -> SettingsDb:
-    validation.validate_entity_exists(user_id, "user", database_crud.get_user(db, user_id))
+def update_user_settings(db: Session, settings_update: SettingsUpdate, token: str) -> SettingsDb:
+    user_id = auth.verify_token(db, token)
     return database_crud.update_user_settings(db, settings_update, user_id)
 
 

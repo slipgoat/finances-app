@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, Header
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,13 @@ Base.metadata.create_all(bind=engine)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="signin")
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():
@@ -60,13 +68,17 @@ async def get_users(db: Session = Depends(get_db)):
 
 
 @app.get("/settings", response_model=Settings)
-async def get_user_settings(user_id: int, db: Session = Depends(get_db)):
-    return service.get_user_settings(db, user_id)
+async def get_user_settings(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    return service.get_user_settings(db, token)
 
 
 @app.patch("/settings", response_model=Settings)
-async def update_user_settings(settings_update: SettingsUpdate, user_id: int = Header(), db: Session = Depends(get_db)):
-    return service.update_user_settings(db, settings_update, user_id)
+async def update_user_settings(
+        settings_update: SettingsUpdate,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)
+):
+    return service.update_user_settings(db, settings_update, token)
 
 
 @app.get("/incomes", response_model=list[Category])

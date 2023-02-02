@@ -43,8 +43,8 @@ class User(UserBase):
 
 
 class SettingsBase(BaseModel):
-    start_date: datetime.date = datetime.date.today()
-    base_currency: str = Currency.EUR.value
+    start_date: datetime.date = datetime.datetime.utcnow().date()
+    base_currency: int = Currency.EUR.value
 
 
 class SettingsCreate(SettingsBase):
@@ -52,15 +52,12 @@ class SettingsCreate(SettingsBase):
 
 
 class SettingsUpdate(SettingsBase):
-    user_id: int
-
-    class Config:
-        orm_mode = True
+    start_date: Optional[datetime.date]
+    base_currency: Optional[int]
 
 
 class Settings(SettingsBase):
     id: int
-    user_id: int
 
     class Config:
         orm_mode = True
