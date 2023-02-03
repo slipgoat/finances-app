@@ -36,7 +36,7 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USERNAME }}
         password: ${{ secrets.REMOTE_PASSWORD }}
-        source: ".env,docker-compose.prod.yml"
+        source: ".env,traefik.prod.toml,docker-compose.prod.yml"
         target: "/app"
         
     - name: Run Docker Compose up
