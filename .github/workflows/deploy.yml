@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Make .env file
+      uses: SpicyPizza/create-envfile@v1.3
+      with:
+        envkey_DASHBOARD_USER: ${{ secrets.DASHBOARD_USER }}
+        envkey_DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        envkey_MAIN_HOST: ${{ secrets.MAIN_HOST }}
+        envkey_DASHBOARD_HOST: ${{ secrets.DASHBOARD_HOST }}
+        envkey_CERT_EMAIL: ${{ secrets.CERT_EMAIL }}
+        envkey_POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        envkey_POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        envkey_POSTGRES_DB: finances
+        envkey_DB_PORT: 5432
+        envkey_DB_HOST: db
+        envkey_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}
+        envkey_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        file_name: .env
+        fail_on_empty: true
+        
+    - name: Copy files to remote host
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USERNAME }}
+        password: ${{ secrets.REMOTE_PASSWORD }}
+        source: ".env,docker-compose.prod.yml"
+        target: "/app"
+        
+    - name: Run Docker Compose up
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USERNAME }}
+        password: ${{ secrets.REMOTE_PASSWORD }}
+        script: |
+          docker-compose -f docker-compose.prod.yml up -d --pull always
+          docker image prune -a -f
