@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from database_models import UserDb, CategoryDb, TransactionDb, SettingsDb
 from models import UserCreate, CategoryType, CategoryCreate, TransactionCreate, CategoryUpdate, TransactionUpdate, \
@@ -90,7 +91,7 @@ def update_category(db: Session, category_update: CategoryUpdate, category_id: i
 
 def delete_category(db: Session, category_id: int):
     db.query(CategoryDb).filter(CategoryDb.id == category_id).delete()
-    transactions = get_transaction_by_category_id(db, category_id)
+    transactions = get_category_transactions(db, category_id)
 
     for transaction in transactions:
         delete_transaction(db, transaction.id)
@@ -108,12 +109,52 @@ def get_transaction_by_id(db: Session, transaction_id: int) -> TransactionDb:
     return db.query(TransactionDb).filter(TransactionDb.id == transaction_id).first()
 
 
-def get_transaction_by_category_id(db: Session, category_id: int) -> list[TransactionDb]:
-    source_transactions = db.query(TransactionDb).filter(TransactionDb.source == category_id).all()
-    destination_transactions = db.query(TransactionDb).filter(TransactionDb.destination == category_id).all()
+def get_category_transactions(
+        db: Session,
+        category_id: int,
+        period_start: datetime = None,
+        period_end: datetime = None
+) -> list[TransactionDb]:
+    source_transactions_query = db.query(TransactionDb).filter(TransactionDb.source == category_id)
+    if period_end is not None and period_start is not None:
+        source_transactions_query = source_transactions_query\
+            .filter(TransactionDb.timestamp >= period_start) \
+            .filter(TransactionDb.timestamp <= period_end)
+
+    destination_transactions_query = db.query(TransactionDb).filter(TransactionDb.destination == category_id)
+    if period_end is not None and period_start is not None:
+        destination_transactions_query = destination_transactions_query \
+            .filter(TransactionDb.timestamp >= period_start) \
+            .filter(TransactionDb.timestamp <= period_end)
+
+    source_transactions = source_transactions_query.all()
+    destination_transactions = destination_transactions_query.all()
+
     output = [*source_transactions, *destination_transactions]
     output.sort(key=lambda transaction: transaction.timestamp, reverse=True)
     return output
+
+
+def get_category_period_sum(
+        db: Session,
+        category_id: int,
+        period_start: datetime,
+        period_end: datetime
+) -> float:
+    source_transactions_sum = db.query(func.sum(TransactionDb.amount))\
+        .filter(TransactionDb.source == category_id) \
+        .filter(TransactionDb.timestamp >= period_start) \
+        .filter(TransactionDb.timestamp <= period_end).scalar()
+
+    destination_transactions_sum = db.query(func.sum(TransactionDb.amount)) \
+        .filter(TransactionDb.destination == category_id) \
+        .filter(TransactionDb.timestamp >= period_start) \
+        .filter(TransactionDb.timestamp <= period_end).scalar()
+
+    source_transactions_sum = 0 if source_transactions_sum is None else source_transactions_sum
+    destination_transactions_sum = 0 if destination_transactions_sum is None else destination_transactions_sum
+
+    return source_transactions_sum + destination_transactions_sum
 
 
 def create_transaction(db: Session, transaction_create: TransactionCreate, user_id: int) -> TransactionDb:

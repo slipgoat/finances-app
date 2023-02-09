@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends, Header
+from datetime import datetime
+
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -144,8 +146,25 @@ async def add_account_expense_transaction(
 
 
 @v1.get("/categories/{category_id}/transactions", response_model=list[Transaction])
-async def get_category_transactions(category_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    return service.get_category_transactions(db, category_id, token)
+async def get_category_transactions(
+        category_id: int,
+        period_start: datetime = None,
+        period_end: datetime = None,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)
+):
+    return service.get_category_transactions(db, category_id, period_start, period_end, token)
+
+
+@v1.get("/categories/{category_id}/transactions-sum", response_model=float)
+async def get_category_period_sum(
+        category_id: int,
+        period_start: datetime = None,
+        period_end: datetime = None,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)
+):
+    return service.get_category_period_sum(db, category_id, period_start, period_end, token)
 
 
 @v1.patch("/transactions/{transaction_id}", response_model=Transaction)

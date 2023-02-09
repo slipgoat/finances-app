@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -121,10 +123,28 @@ def add_account_expense_transaction(
     return database_crud.create_transaction(db, transaction_create, user_id=user_id)
 
 
-def get_category_transactions(db: Session, category_id: int, token: str) -> list[TransactionDb]:
+def get_category_transactions(
+        db: Session,
+        category_id: int,
+        period_start: datetime,
+        period_end: datetime,
+        token: str
+) -> list[TransactionDb]:
     auth.verify_token(db, token)
     validation.validate_entity_exists(category_id, "category", database_crud.get_category_by_id(db, category_id))
-    return database_crud.get_transaction_by_category_id(db, category_id)
+    return database_crud.get_category_transactions(db, category_id, period_start, period_end)
+
+
+def get_category_period_sum(
+        db: Session,
+        category_id: int,
+        period_start: datetime,
+        period_end: datetime,
+        token: str
+) -> float:
+    auth.verify_token(db, token)
+    validation.validate_entity_exists(category_id, "category", database_crud.get_category_by_id(db, category_id))
+    return database_crud.get_category_period_sum(db, category_id, period_start, period_end)
 
 
 # TODO: add validation transaction direction validation
