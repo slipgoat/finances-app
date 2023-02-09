@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -126,8 +126,8 @@ def add_account_expense_transaction(
 def get_category_transactions(
         db: Session,
         category_id: int,
-        period_start: datetime,
-        period_end: datetime,
+        period_start: date,
+        period_end: date,
         token: str
 ) -> list[TransactionDb]:
     auth.verify_token(db, token)
@@ -138,8 +138,8 @@ def get_category_transactions(
 def get_category_period_sum(
         db: Session,
         category_id: int,
-        period_start: datetime,
-        period_end: datetime,
+        period_start: date,
+        period_end: date,
         token: str
 ) -> float:
     auth.verify_token(db, token)

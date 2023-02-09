@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -112,8 +112,8 @@ def get_transaction_by_id(db: Session, transaction_id: int) -> TransactionDb:
 def get_category_transactions(
         db: Session,
         category_id: int,
-        period_start: datetime = None,
-        period_end: datetime = None
+        period_start: date = None,
+        period_end: date = None
 ) -> list[TransactionDb]:
     source_transactions_query = db.query(TransactionDb).filter(TransactionDb.source == category_id)
     if period_end is not None and period_start is not None:
@@ -138,8 +138,8 @@ def get_category_transactions(
 def get_category_period_sum(
         db: Session,
         category_id: int,
-        period_start: datetime,
-        period_end: datetime
+        period_start: date,
+        period_end: date
 ) -> float:
     source_transactions_sum = db.query(func.sum(TransactionDb.amount))\
         .filter(TransactionDb.source == category_id) \

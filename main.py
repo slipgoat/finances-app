@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -148,8 +148,8 @@ async def add_account_expense_transaction(
 @v1.get("/categories/{category_id}/transactions", response_model=list[Transaction])
 async def get_category_transactions(
         category_id: int,
-        period_start: datetime = None,
-        period_end: datetime = None,
+        period_start: date = None,
+        period_end: date = None,
         token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db)
 ):
@@ -159,8 +159,8 @@ async def get_category_transactions(
 @v1.get("/categories/{category_id}/transactions-sum", response_model=float)
 async def get_category_period_sum(
         category_id: int,
-        period_start: datetime = None,
-        period_end: datetime = None,
+        period_start: date = None,
+        period_end: date = None,
         token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db)
 ):
