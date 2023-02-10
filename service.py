@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 import database_crud
 from database_models import TransactionDb, CategoryDb, SettingsDb
 from models import TransactionCreate, CategoryUpdate, TransactionUpdate, UserCreate, SettingsUpdate, TokenData, \
-    CategoryCreate, Token
+    CategoryCreate, Token, CategoryType
 import validation
 import auth
+import utils
 
 
 def signup(db: Session, data: OAuth2PasswordRequestForm) -> Token:
@@ -42,29 +43,68 @@ def update_user_settings(db: Session, settings_update: SettingsUpdate, token: st
 
 def get_incomes(db: Session, token: str) -> list[CategoryDb]:
     user_id = auth.verify_token(db, token)
-    return database_crud.get_incomes(db, user_id)
+    incomes = database_crud.get_incomes(db, user_id)
+    current_period = utils.get_current_period()
+
+    for income in incomes:
+        amount = database_crud.get_category_period_sum(
+            db,
+            income.id,
+            period_start=current_period[0],
+            period_end=current_period[1]
+        )
+        income.amount = utils.round_float(amount)
+
+    return incomes
 
 
 def get_accounts(db: Session, token: str) -> list[CategoryDb]:
     user_id = auth.verify_token(db, token)
-    return database_crud.get_accounts(db, user_id)
+    accounts = database_crud.get_accounts(db, user_id)
+    for account in accounts:
+        account.amount = utils.round_float(account.amount)
+    return accounts
 
 
 def get_expenses(db: Session, token: str) -> list[CategoryDb]:
     user_id = auth.verify_token(db, token)
-    return database_crud.get_expenses(db, user_id)
+    expenses = database_crud.get_expenses(db, user_id)
+    current_period = utils.get_current_period()
+
+    for expense in expenses:
+        amount = database_crud.get_category_period_sum(
+            db,
+            expense.id,
+            period_start=current_period[0],
+            period_end=current_period[1]
+        )
+        expense.amount = utils.round_float(amount)
+
+    return expenses
 
 
 def get_category(db: Session, category_id: int, token: str) -> CategoryDb:
     auth.verify_token(db, token)
     category = database_crud.get_category_by_id(db, category_id)
     validation.validate_entity_exists(category_id, "category", category)
+    if category.type == CategoryType.EXPENSE.value or category.type == CategoryType.INCOME.value:
+        current_period = utils.get_current_period()
+        amount = database_crud.get_category_period_sum(
+            db,
+            category_id,
+            period_start=current_period[0],
+            period_end=current_period[1]
+        )
+        category.amount = amount
+    category.amount = utils.round_float(category.amount)
     return category
 
 
 def add_category(db: Session, category_create: CategoryCreate, token: str) -> CategoryDb:
     user_id = auth.verify_token(db, token)
-    return database_crud.create_category(db, category_create, user_id)
+    category =  database_crud.create_category(db, category_create, user_id)
+    category.amount = utils.round_float(category.amount)
+    return category
 
 
 def update_category(db: Session, category_update: CategoryUpdate, category_id: int, token: str) -> CategoryDb:
@@ -73,7 +113,9 @@ def update_category(db: Session, category_update: CategoryUpdate, category_id: i
     validation.validate_not_changing_category_type(
         category_update.type, database_crud.get_category_by_id(db, category_id).type
     )
-    return database_crud.update_category(db, category_update, category_id)
+    category = database_crud.update_category(db, category_update, category_id)
+    category.amount = utils.round_float(category.amount)
+    return category
 
 
 def delete_category(db: Session, category_id: int, token: str):
