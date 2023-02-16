@@ -41,17 +41,17 @@ def update_user_settings(db: Session, settings_update: SettingsUpdate, token: st
     return database_crud.update_user_settings(db, settings_update, user_id)
 
 
-def get_incomes(db: Session, token: str) -> list[CategoryDb]:
+def get_incomes(db: Session, period_offset: int, token: str) -> list[CategoryDb]:
     user_id = auth.verify_token(db, token)
     incomes = database_crud.get_incomes(db, user_id)
-    current_period = utils.get_current_period()
+    period = utils.get_period(period_offset)
 
     for income in incomes:
         amount = database_crud.get_category_period_sum(
             db,
             income.id,
-            period_start=current_period[0],
-            period_end=current_period[1]
+            period_start=period[0],
+            period_end=period[1]
         )
         income.amount = utils.round_float(amount)
 
@@ -66,34 +66,34 @@ def get_accounts(db: Session, token: str) -> list[CategoryDb]:
     return accounts
 
 
-def get_expenses(db: Session, token: str) -> list[CategoryDb]:
+def get_expenses(db: Session, period_offset: int, token: str) -> list[CategoryDb]:
     user_id = auth.verify_token(db, token)
     expenses = database_crud.get_expenses(db, user_id)
-    current_period = utils.get_current_period()
+    period = utils.get_period(period_offset)
 
     for expense in expenses:
         amount = database_crud.get_category_period_sum(
             db,
             expense.id,
-            period_start=current_period[0],
-            period_end=current_period[1]
+            period_start=period[0],
+            period_end=period[1]
         )
         expense.amount = utils.round_float(amount)
 
     return expenses
 
 
-def get_category(db: Session, category_id: int, token: str) -> CategoryDb:
+def get_category(db: Session, category_id: int, period_offset: int, token: str) -> CategoryDb:
     auth.verify_token(db, token)
     category = database_crud.get_category_by_id(db, category_id)
     validation.validate_entity_exists(category_id, "category", category)
     if category.type == CategoryType.EXPENSE.value or category.type == CategoryType.INCOME.value:
-        current_period = utils.get_current_period()
+        period = utils.get_period(period_offset)
         amount = database_crud.get_category_period_sum(
             db,
             category_id,
-            period_start=current_period[0],
-            period_end=current_period[1]
+            period_start=period[0],
+            period_end=period[1]
         )
         category.amount = amount
     category.amount = utils.round_float(category.amount)
@@ -168,25 +168,13 @@ def add_account_expense_transaction(
 def get_category_transactions(
         db: Session,
         category_id: int,
-        period_start: date,
-        period_end: date,
+        period_offset: int,
         token: str
 ) -> list[TransactionDb]:
     auth.verify_token(db, token)
     validation.validate_entity_exists(category_id, "category", database_crud.get_category_by_id(db, category_id))
-    return database_crud.get_category_transactions(db, category_id, period_start, period_end)
-
-
-def get_category_period_sum(
-        db: Session,
-        category_id: int,
-        period_start: date,
-        period_end: date,
-        token: str
-) -> float:
-    auth.verify_token(db, token)
-    validation.validate_entity_exists(category_id, "category", database_crud.get_category_by_id(db, category_id))
-    return database_crud.get_category_period_sum(db, category_id, period_start, period_end)
+    period = utils.get_period(period_offset)
+    return database_crud.get_category_transactions(db, category_id, period_start=period[0], period_end=period[1])
 
 
 # TODO: add validation transaction direction validation

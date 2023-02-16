@@ -85,8 +85,12 @@ async def update_user_settings(
 
 
 @v1.get("/incomes", response_model=list[Category])
-async def get_incomes(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    return service.get_incomes(db, token)
+async def get_incomes(
+        period_offset: int = 0,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)
+):
+    return service.get_incomes(db, period_offset, token)
 
 
 @v1.get("/accounts", response_model=list[Category])
@@ -95,13 +99,21 @@ async def get_accounts(token: str = Depends(oauth2_scheme), db: Session = Depend
 
 
 @v1.get("/expenses", response_model=list[Category])
-async def get_expenses(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    return service.get_expenses(db, token)
+async def get_expenses(
+        period_offset: int = 0,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)
+):
+    return service.get_expenses(db, period_offset, token)
 
 
 @v1.get("/categories/{category_id}", response_model=Category)
-async def get_category(category_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    return service.get_category(db, category_id, token)
+async def get_category(
+        category_id: int,
+        period_offset: int = 0,
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db)):
+    return service.get_category(db, category_id, period_offset, token)
 
 
 @v1.post("/categories", response_model=Category)
@@ -148,23 +160,11 @@ async def add_account_expense_transaction(
 @v1.get("/categories/{category_id}/transactions", response_model=list[Transaction])
 async def get_category_transactions(
         category_id: int,
-        period_start: date = None,
-        period_end: date = None,
+        period_offset: int = 0,
         token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db)
 ):
-    return service.get_category_transactions(db, category_id, period_start, period_end, token)
-
-
-@v1.get("/categories/{category_id}/transactions-sum", response_model=float)
-async def get_category_period_sum(
-        category_id: int,
-        period_start: date = None,
-        period_end: date = None,
-        token: str = Depends(oauth2_scheme),
-        db: Session = Depends(get_db)
-):
-    return service.get_category_period_sum(db, category_id, period_start, period_end, token)
+    return service.get_category_transactions(db, category_id, period_offset, token)
 
 
 @v1.patch("/transactions/{transaction_id}", response_model=Transaction)
